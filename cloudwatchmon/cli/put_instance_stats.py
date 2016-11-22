@@ -130,10 +130,6 @@ class Disk:
         self.util = 100.0 * used / total if total > 0 else 0
 
 
-def get_directory_info(path):
-    pass
-
-
 class Directory(object):
     def __init__(self, total_file_size, total_file_count):
         self.total_file_size
@@ -141,8 +137,8 @@ class Directory(object):
 
 
 class Process(object):
-    def __init__(self, process_count):
-        self.process_count = process_count
+    def __init__(self, proc_count):
+        self.proc_count = proc_count
 
 
 class TcpCheck(object):
@@ -326,11 +322,23 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
                             choices=size_units,
                             help='Specifies units for disk space metrics.')
 
-    process_group = parser.add_argument_group('process metrics')
-    disk_group.add_argument('--process-name',
-                            metavar='PROCESS_NAME',
+    proc_group = parser.add_argument_group('process metrics')
+    proc_group.add_argument('--proc-name',
+                            metavar='PROC_NAME',
                             action='append',
                             help='Selects the process by the name on which to report.')
+
+    dir_group = parser.add_argument_group('directory metrics')
+    dir_group.add_argument('--dir-path',
+                            metavar='DIR_PATH',
+                            action='append',
+                            help='Selects the directory by the path on which to report.')
+
+    tcp_group = parser.add_argument_group('tcp port metrics')
+    tcp_group.add_argument('--dir-path',
+                            metavar='TCP_PORT',
+                            action='append',
+                            help='Selects the tcp port by the addr on which to report.')
 
     exclusive_group = parser.add_mutually_exclusive_group()
     exclusive_group.add_argument('--from-cron',
@@ -426,7 +434,7 @@ def add_disk_metrics(args, metrics):
                                disk.mount, disk.file_system)
 
 
-def get_process_info(name):
+def get_proc_info(name):
     pids = set()
     for proc in psutil.process_iter():
         if proc.name() == name
@@ -434,10 +442,10 @@ def get_process_info(name):
     return Process(len(pids))
 
 
-def add_process_metrics(args, metrics)
-    for p in args.process_name:
-        proc = get_process_info(p)
-        metrics.add_metric('ProcessCount', p, proc.process_count)
+def add_proc_metrics(args, metrics)
+    for p in args.proc_name:
+        proc = get_proc_info(p)
+        metrics.add_metric('ProcessCount', p, proc.proc_count)
 
 
 def get_tcp_info(host, port, interval=0, retries=3):
@@ -465,7 +473,7 @@ def add_tcp_metrics(args, metrics):
         metrics.add_metric('TcpCheck', addr, r.check_result)
 
 
-def get_directory_info(path):
+def get_dir_info(path):
 
     total_file_size = set()
 
@@ -476,9 +484,9 @@ def get_directory_info(path):
     return Directory(sum(total_file_size), len(total_file_size))
 
 
-def add_directory_metrics(args, metrics):
-    for d in args.directory_path:
-        dir_info = get_directory_info(d)
+def add_dir_metrics(args, metrics):
+    for d in args.dir_path:
+        dir_info = get_dir_info(d)
         metrics.add_metric('DirectoryFileSize', d, dir_info.total_file_size)
         metrics.add_metric('DirectoryFileCount' d, dir_info.total_file_count)
 
@@ -517,6 +525,9 @@ def validate_args(args):
         args.swap_util or args.swap_used
     report_disk_data = args.disk_path is not None
     report_loadavg_data = args.loadavg or args.loadavg_percpu
+    report_dir_data = args.dir_path is not None
+    report_tcp_data = args.tcp_addr is not None
+    report_proc_data = args.proc_name is not None
 
     if report_disk_data:
         if not args.disk_space_util and not args.disk_space_used and \
@@ -538,7 +549,8 @@ def validate_args(args):
         raise ValueError('No metrics specified for collection and '
                          'submission to CloudWatch.')
 
-    return report_disk_data, report_mem_data, report_loadavg_data
+    return report_disk_data, report_mem_data, report_loadavg_data, report_dir_data, \
+            report_tcp_data, report_proc_data
 
 
 def main():
@@ -556,7 +568,8 @@ def main():
         return 0
 
     try:
-        report_disk_data, report_mem_data, report_loadavg_data = validate_args(args)
+        report_disk_data, report_mem_data, report_loadavg_data, \
+                report_dir_data report_tcp_data, report_proc_data  = validate_args(args)
 
         # avoid a storm of calls at the beginning of a minute
         if args.from_cron:
@@ -600,6 +613,15 @@ def main():
 
         if report_disk_data:
             add_disk_metrics(args, metrics)
+
+        if report_dir_data:
+            add_dir_metrics(args, metrics)
+
+        if report_tcp_data:
+            add_tcp_metrics(args, metrics)
+
+        if report_proc_data:
+            add_proc_metrics(args, metrics)
 
         if args.verbose:
             print 'Request:\n' + str(metrics)
