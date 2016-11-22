@@ -132,8 +132,8 @@ class Disk:
 
 class Directory(object):
     def __init__(self, total_file_size, total_file_count):
-        self.total_file_size
-        self.total_file_count
+        self.total_file_size = total_file_size
+        self.total_file_count = total_file_count
 
 
 class Process(object):
@@ -160,12 +160,14 @@ class Metrics:
         self.aggregated = aggregated
         self.autoscaling_group_name = autoscaling_group_name
 
-    def add_metric(self, name, unit, value, mount=None, file_system=None):
+    def add_metric(self, name, unit, value, mount=None, file_system=None, dim=None):
         common_dims = {}
         if mount:
             common_dims['MountPath'] = mount
         if file_system:
             common_dims['Filesystem'] = file_system
+        if dim:
+            common_dims['Dimension'] = dim
 
         dims = []
 
@@ -445,7 +447,7 @@ def get_proc_info(name):
 def add_proc_metrics(args, metrics):
     for p in args.proc_name:
         proc = get_proc_info(p)
-        metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, p)
+        metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, dim=p)
 
 
 def get_tcp_info(host, port, interval=0, retries=3):
@@ -455,7 +457,7 @@ def get_tcp_info(host, port, interval=0, retries=3):
     for x in range(retries):
         try:
             s.settimeout(1)
-            s.connect((host, port))
+            s.connect((host, int(port)))
             s.close()
             check_result = 1
             break
@@ -470,7 +472,7 @@ def add_tcp_metrics(args, metrics):
     for addr in args.tcp_addr:
         host, port = addr.split(':')
         r = get_tcp_info(host, port)
-        metrics.add_metric('TcpCheck', None, r.check_result, addr)
+        metrics.add_metric('TcpCheck', None, r.check_result, dim=addr)
 
 
 def get_dir_info(path):
@@ -478,7 +480,7 @@ def get_dir_info(path):
     total_file_size = set()
 
     for root, dirs, files in os.walk(path):
-        dir_size = sum(os.path.getsize(join(root, f)) for f in files)
+        dir_size = sum(os.path.getsize(os.path.join(root, f)) for f in files)
         total_file_size.add(dir_size)
 
     return Directory(sum(total_file_size), len(total_file_size))
@@ -487,8 +489,8 @@ def get_dir_info(path):
 def add_dir_metrics(args, metrics):
     for d in args.dir_path:
         dir_info = get_dir_info(d)
-        metrics.add_metric('DirectoryFileSize', 'Bytes', dir_info.total_file_size, d)
-        metrics.add_metric('DirectoryFileCount', 'Count', dir_info.total_file_count, d)
+        metrics.add_metric('DirectoryFileSize', 'Bytes', dir_info.total_file_size, dim=d)
+        metrics.add_metric('DirectoryFileCount', 'Count', dir_info.total_file_count, dim=d)
 
 
 def add_static_file_metrics(args, metrics):
