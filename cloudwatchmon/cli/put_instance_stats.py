@@ -28,7 +28,11 @@ import os
 import random
 import re
 import sys
+import socket
 import time
+
+import psutil
+
 
 CLIENT_NAME = 'CloudWatch-PutInstanceData'
 FileCache.CLIENT_NAME = CLIENT_NAME
@@ -124,6 +128,26 @@ class Disk:
         self.used = used
         self.avail = avail
         self.util = 100.0 * used / total if total > 0 else 0
+
+
+def get_directory_info(path):
+    pass
+
+
+class Directory(object):
+    def __init__(self, total_file_size, total_file_count):
+        self.total_file_size
+        self.total_file_count
+
+
+class Process(object):
+    def __init__(self, process_count):
+        self.process_count = process_count
+
+
+class TcpCheck(object):
+    def __init__(self, check_result):
+        self.check_result = check_result
 
 
 class Metrics:
@@ -302,6 +326,12 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
                             choices=size_units,
                             help='Specifies units for disk space metrics.')
 
+    process_group = parser.add_argument_group('process metrics')
+    disk_group.add_argument('--process-name',
+                            metavar='PROCESS_NAME',
+                            action='append',
+                            help='Selects the process by the name on which to report.')
+
     exclusive_group = parser.add_mutually_exclusive_group()
     exclusive_group.add_argument('--from-cron',
                                  action='store_true',
@@ -394,6 +424,63 @@ def add_disk_metrics(args, metrics):
             metrics.add_metric('DiskSpaceAvailable', disk_unit_name,
                                disk.avail / disk_unit_div,
                                disk.mount, disk.file_system)
+
+
+def get_process_info(name):
+    pids = set()
+    for proc in psutil.process_iter():
+        if proc.name() == name
+            pids.add(proc.pid)
+    return Process(len(pids))
+
+
+def add_process_metrics(args, metrics)
+    for p in args.process_name:
+        proc = get_process_info(p)
+        metrics.add_metric('ProcessCount', p, proc.process_count)
+
+
+def get_tcp_info(host, port, interval=0, retries=3):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    check_result = 0
+    for x in range(retries):
+        try:
+            s.settimeout(1)
+            s.connect((host, port))
+            s.close()
+            check_result = 1
+            break
+        except socket.error as e:
+            time.sleep(interval)
+
+    s.close()
+    return TcpCheck(check_result)
+
+
+def add_tcp_metrics(args, metrics):
+    for addr in args.tcp_addr:
+        host, port = addr.split(':')
+        r = get_tcp_info(host, port)
+        metrics.add_metric('TcpCheck', addr, r.check_result)
+
+
+def get_directory_info(path):
+
+    total_file_size = set()
+
+    for root, dirs, files in os.walk(path):
+        dir_size = sum(os.path.getsize(join(root, f)) for f in files)
+        total_file_size.add(dir_size)
+
+    return Directory(sum(total_file_size), len(total_file_size))
+
+
+def add_directory_metrics(args, metrics):
+    for d in args.directory_path:
+        dir_info = get_directory_info(d)
+        metrics.add_metric('DirectoryFileSize', d, dir_info.total_file_size)
+        metrics.add_metric('DirectoryFileCount' d, dir_info.total_file_count)
 
 
 def add_static_file_metrics(args, metrics):
