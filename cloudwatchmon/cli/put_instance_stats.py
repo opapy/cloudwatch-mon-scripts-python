@@ -335,8 +335,8 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
                             help='Selects the directory by the path on which to report.')
 
     tcp_group = parser.add_argument_group('tcp port metrics')
-    tcp_group.add_argument('--dir-path',
-                            metavar='TCP_PORT',
+    tcp_group.add_argument('--tcp-addr',
+                            metavar='TCP_ADDR',
                             action='append',
                             help='Selects the tcp port by the addr on which to report.')
 
@@ -437,15 +437,15 @@ def add_disk_metrics(args, metrics):
 def get_proc_info(name):
     pids = set()
     for proc in psutil.process_iter():
-        if proc.name() == name
+        if proc.name() == name:
             pids.add(proc.pid)
     return Process(len(pids))
 
 
-def add_proc_metrics(args, metrics)
+def add_proc_metrics(args, metrics):
     for p in args.proc_name:
         proc = get_proc_info(p)
-        metrics.add_metric('ProcessCount', p, proc.proc_count)
+        metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, p)
 
 
 def get_tcp_info(host, port, interval=0, retries=3):
@@ -470,7 +470,7 @@ def add_tcp_metrics(args, metrics):
     for addr in args.tcp_addr:
         host, port = addr.split(':')
         r = get_tcp_info(host, port)
-        metrics.add_metric('TcpCheck', addr, r.check_result)
+        metrics.add_metric('TcpCheck', None, r.check_result, addr)
 
 
 def get_dir_info(path):
@@ -487,8 +487,8 @@ def get_dir_info(path):
 def add_dir_metrics(args, metrics):
     for d in args.dir_path:
         dir_info = get_dir_info(d)
-        metrics.add_metric('DirectoryFileSize', d, dir_info.total_file_size)
-        metrics.add_metric('DirectoryFileCount' d, dir_info.total_file_count)
+        metrics.add_metric('DirectoryFileSize', 'Bytes', dir_info.total_file_size, d)
+        metrics.add_metric('DirectoryFileCount', 'Count', dir_info.total_file_count, d)
 
 
 def add_static_file_metrics(args, metrics):
@@ -545,7 +545,8 @@ def validate_args(args):
                          'disk path is not specified.')
 
     if not report_mem_data and not report_disk_data and not args.from_file and \
-            not report_loadavg_data:
+            not report_loadavg_data and not report_dir_data and \
+            not report_tcp_data and not report_proc_data:
         raise ValueError('No metrics specified for collection and '
                          'submission to CloudWatch.')
 
@@ -569,7 +570,7 @@ def main():
 
     try:
         report_disk_data, report_mem_data, report_loadavg_data, \
-                report_dir_data report_tcp_data, report_proc_data  = validate_args(args)
+                report_dir_data, report_tcp_data, report_proc_data  = validate_args(args)
 
         # avoid a storm of calls at the beginning of a minute
         if args.from_cron:
