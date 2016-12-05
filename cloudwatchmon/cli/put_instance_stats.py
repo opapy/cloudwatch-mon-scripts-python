@@ -329,11 +329,11 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
                             action='append',
                             help='Selects the process by the name on which to report.')
 
-    dir_group = parser.add_argument_group('directory metrics')
-    dir_group.add_argument('--dir-path',
-                            metavar='DIR_PATH',
+    file_group = parser.add_argument_group('file metrics')
+    file_group.add_argument('--file-path',
+                            metavar='FILE_PATH',
                             action='append',
-                            help='Selects the directory by the path on which to report.')
+                            help='Selects the file by the path on which to report.')
 
     tcp_group = parser.add_argument_group('tcp port metrics')
     tcp_group.add_argument('--tcp-addr',
