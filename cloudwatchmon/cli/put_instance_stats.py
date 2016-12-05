@@ -169,7 +169,7 @@ class Metrics:
             common_dims['File'] = f
         if proc:
             common_dims['Process'] = proc
-        if tcp:
+        if tcp_ping:
             common_dims['Target'] = tcp_ping
 
         dims = []
