@@ -130,10 +130,9 @@ class Disk:
         self.util = 100.0 * used / total if total > 0 else 0
 
 
-class Directory(object):
-    def __init__(self, total_file_size, total_file_count):
-        self.total_file_size = total_file_size
-        self.total_file_count = total_file_count
+class File(object):
+    def __init__(self, file_size):
+        self.file_size = file_size
 
 
 class Process(object):
@@ -475,22 +474,17 @@ def add_tcp_metrics(args, metrics):
         metrics.add_metric('TcpCheck', None, r.check_result, dim=addr)
 
 
-def get_dir_info(path):
+def get_file_info(path):
 
-    total_file_size = set()
+    file_size = os.path.getsize(path)
 
-    for root, dirs, files in os.walk(path):
-        dir_size = sum(os.path.getsize(os.path.join(root, f)) for f in files)
-        total_file_size.add(dir_size)
-
-    return Directory(sum(total_file_size), len(total_file_size))
+    return File(file_size)
 
 
-def add_dir_metrics(args, metrics):
-    for d in args.dir_path:
-        dir_info = get_dir_info(d)
-        metrics.add_metric('DirectoryFileSize', 'Bytes', dir_info.total_file_size, dim=d)
-        metrics.add_metric('DirectoryFileCount', 'Count', dir_info.total_file_count, dim=d)
+def add_file_metrics(args, metrics):
+    for f in args.file_path:
+        file_info = get_file_info(f)
+        metrics.add_metric('FileSize', 'Bytes', file_info.file_size, dim=f)
 
 
 def add_static_file_metrics(args, metrics):
