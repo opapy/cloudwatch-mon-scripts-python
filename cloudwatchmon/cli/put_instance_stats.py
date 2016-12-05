@@ -521,7 +521,7 @@ def validate_args(args):
         args.swap_util or args.swap_used
     report_disk_data = args.disk_path is not None
     report_loadavg_data = args.loadavg or args.loadavg_percpu
-    report_dir_data = args.dir_path is not None
+    report_dir_data = args.file_path is not None
     report_tcp_data = args.tcp_addr is not None
     report_proc_data = args.proc_name is not None
 
