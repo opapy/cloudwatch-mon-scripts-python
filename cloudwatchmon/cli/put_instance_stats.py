@@ -341,7 +341,7 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
 
     tcp_group = parser.add_argument_group('tcp ping metrics')
     tcp_group.add_argument('--tcp-ping',
-                            metavar='TCP_ADDR',
+                            metavar='HOST:PORT',
                             action='append',
                             help='Selects the tcp ping by the addr on which to report.')
 
