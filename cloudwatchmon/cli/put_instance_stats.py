@@ -159,7 +159,7 @@ class Metrics:
         self.aggregated = aggregated
         self.autoscaling_group_name = autoscaling_group_name
 
-    def add_metric(self, name, unit, value, mount=None, file_system=None, f=None, proc=None, tcp=None):
+    def add_metric(self, name, unit, value, mount=None, file_system=None, f=None, proc=None, tcp_ping=None):
         common_dims = {}
         if mount:
             common_dims['MountPath'] = mount
@@ -170,7 +170,7 @@ class Metrics:
         if proc:
             common_dims['Process'] = proc
         if tcp:
-            common_dims['Network'] = tcp
+            common_dims['Target'] = tcp_ping
 
         dims = []
 
@@ -339,11 +339,11 @@ https://github.com/osiegmar/cloudwatch-mon-scripts-python
                             action='append',
                             help='Selects the file by the path on which to report.')
 
-    tcp_group = parser.add_argument_group('tcp port metrics')
-    tcp_group.add_argument('--tcp-addr',
+    tcp_group = parser.add_argument_group('tcp ping metrics')
+    tcp_group.add_argument('--tcp-ping',
                             metavar='TCP_ADDR',
                             action='append',
-                            help='Selects the tcp port by the addr on which to report.')
+                            help='Selects the tcp ping by the addr on which to report.')
 
     exclusive_group = parser.add_mutually_exclusive_group()
     exclusive_group.add_argument('--from-cron',
@@ -453,7 +453,7 @@ def add_proc_metrics(args, metrics):
         metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, proc=p)
 
 
-def get_tcp_info(host, port, interval=0, retries=3):
+def get_tcp_ping_info(host, port, interval=0, retries=3):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     check_result = 0
@@ -471,11 +471,11 @@ def get_tcp_info(host, port, interval=0, retries=3):
     return TCPPing(check_result)
 
 
-def add_tcp_metrics(args, metrics):
-    for addr in args.tcp_addr:
+def add_tcp_ping_metrics(args, metrics):
+    for addr in args.tcp_ping:
         host, port = addr.split(':')
-        r = get_tcp_info(host, port)
-        metrics.add_metric('TCPPing', None, r.check_result, tcp=addr)
+        r = get_tcp_ping_info(host, port)
+        metrics.add_metric('TCPPing', None, r.check_result, tcp_ping=addr)
 
 
 def get_file_info(path):
@@ -526,7 +526,7 @@ def validate_args(args):
     report_disk_data = args.disk_path is not None
     report_loadavg_data = args.loadavg or args.loadavg_percpu
     report_file_data = args.file_path is not None
-    report_tcp_data = args.tcp_addr is not None
+    report_tcp_ping_data = args.tcp_ping is not None
     report_proc_data = args.proc_name is not None
 
     if report_disk_data:
@@ -618,8 +618,8 @@ def main():
         if report_file_data:
             add_file_metrics(args, metrics)
 
-        if report_tcp_data:
-            add_tcp_metrics(args, metrics)
+        if report_tcp_ping_data:
+            add_tcp_ping_metrics(args, metrics)
 
         if report_proc_data:
             add_proc_metrics(args, metrics)
