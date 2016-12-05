@@ -546,12 +546,12 @@ def validate_args(args):
 
     if not report_mem_data and not report_disk_data and not args.from_file and \
             not report_loadavg_data and not report_file_data and \
-            not report_tcp_data and not report_proc_data:
+            not report_tcp_ping_data and not report_proc_data:
         raise ValueError('No metrics specified for collection and '
                          'submission to CloudWatch.')
 
     return report_disk_data, report_mem_data, report_loadavg_data, report_file_data, \
-            report_tcp_data, report_proc_data
+            report_tcp_ping_data, report_proc_data
 
 
 def main():
@@ -570,7 +570,7 @@ def main():
 
     try:
         report_disk_data, report_mem_data, report_loadavg_data, \
-                report_file_data, report_tcp_data, report_proc_data  = validate_args(args)
+                report_file_data, report_tcp_ping_data, report_proc_data  = validate_args(args)
 
         # avoid a storm of calls at the beginning of a minute
         if args.from_cron:
