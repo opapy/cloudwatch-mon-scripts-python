@@ -521,7 +521,7 @@ def validate_args(args):
         args.swap_util or args.swap_used
     report_disk_data = args.disk_path is not None
     report_loadavg_data = args.loadavg or args.loadavg_percpu
-    report_dir_data = args.file_path is not None
+    report_file_data = args.file_path is not None
     report_tcp_data = args.tcp_addr is not None
     report_proc_data = args.proc_name is not None
 
@@ -611,8 +611,8 @@ def main():
         if report_disk_data:
             add_disk_metrics(args, metrics)
 
-        if report_dir_data:
-            add_dir_metrics(args, metrics)
+        if report_file_data:
+            add_file_metrics(args, metrics)
 
         if report_tcp_data:
             add_tcp_metrics(args, metrics)
