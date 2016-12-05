@@ -140,7 +140,7 @@ class Process(object):
         self.proc_count = proc_count
 
 
-class TcpCheck(object):
+class TCPPing(object):
     def __init__(self, check_result):
         self.check_result = check_result
 
@@ -159,14 +159,18 @@ class Metrics:
         self.aggregated = aggregated
         self.autoscaling_group_name = autoscaling_group_name
 
-    def add_metric(self, name, unit, value, mount=None, file_system=None, dim=None):
+    def add_metric(self, name, unit, value, mount=None, file_system=None, f=None, proc=None, tcp=None):
         common_dims = {}
         if mount:
             common_dims['MountPath'] = mount
         if file_system:
             common_dims['Filesystem'] = file_system
-        if dim:
-            common_dims['Dimension'] = dim
+        if f:
+            common_dims['File'] = f
+        if proc:
+            common_dims['Process'] = proc
+        if tcp:
+            common_dims['Network'] = tcp
 
         dims = []
 
@@ -446,7 +450,7 @@ def get_proc_info(name):
 def add_proc_metrics(args, metrics):
     for p in args.proc_name:
         proc = get_proc_info(p)
-        metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, dim=p)
+        metrics.add_metric('ProcessCount', 'Count',  proc.proc_count, proc=p)
 
 
 def get_tcp_info(host, port, interval=0, retries=3):
@@ -464,14 +468,14 @@ def get_tcp_info(host, port, interval=0, retries=3):
             time.sleep(interval)
 
     s.close()
-    return TcpCheck(check_result)
+    return TCPPing(check_result)
 
 
 def add_tcp_metrics(args, metrics):
     for addr in args.tcp_addr:
         host, port = addr.split(':')
         r = get_tcp_info(host, port)
-        metrics.add_metric('TcpCheck', None, r.check_result, dim=addr)
+        metrics.add_metric('TCPPing', None, r.check_result, tcp=addr)
 
 
 def get_file_info(path):
@@ -484,7 +488,7 @@ def get_file_info(path):
 def add_file_metrics(args, metrics):
     for f in args.file_path:
         file_info = get_file_info(f)
-        metrics.add_metric('FileSize', 'Bytes', file_info.file_size, dim=f)
+        metrics.add_metric('FileSize', 'Bytes', file_info.file_size, f=f)
 
 
 def add_static_file_metrics(args, metrics):
