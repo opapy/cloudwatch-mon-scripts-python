@@ -132,9 +132,9 @@ class Disk:
 
 
 class File(object):
-    def __init__(self, file_size):
+    def __init__(self, file_size, file_exists):
         self.file_size = file_size
-        self.file_exists
+        self.file_exists = file_exists
 
 
 class Process(object):
