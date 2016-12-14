@@ -168,7 +168,7 @@ class Metrics:
         if file_system:
             common_dims['Filesystem'] = file_system
         if f:
-            common_dims['File'] = f
+            common_dims['FilePath'] = f
         if proc:
             common_dims['Process'] = proc
         if tcp_ping:
