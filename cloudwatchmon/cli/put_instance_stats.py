@@ -495,9 +495,6 @@ def get_file_info(path):
         file_size += os.path.getsize(fp)
         file_exists = file_exists or os.path.exists(fp)
 
-    file_size = os.path.getsize(path)
-    file_exists = os.path.exists(path)
-
     return File(file_size, file_exists)
 
 
