@@ -484,7 +484,7 @@ def get_file_info(path):
     d = os.path.dirname(path)
     f = os.path.basename(path)
 
-    _files = fnmatch.listdir(d) 
+    _files = os.listdir(d) 
     files = fnmatch.filter(files, f)
 
     file_size = 0
