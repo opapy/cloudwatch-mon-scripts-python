@@ -24,6 +24,7 @@ import boto
 import boto.ec2.autoscale
 import boto.ec2.cloudwatch
 import datetime
+import fnmatch
 import os
 import random
 import re
@@ -133,6 +134,7 @@ class Disk:
 class File(object):
     def __init__(self, file_size):
         self.file_size = file_size
+        self.file_exists
 
 
 class Process(object):
@@ -479,16 +481,31 @@ def add_tcp_ping_metrics(args, metrics):
 
 
 def get_file_info(path):
+    d = os.path.dirname(path)
+    f = os.path.basename(path)
+
+    _files = fnmatch.listdir(d) 
+    files = fnmatch.filter(files, f)
+
+    file_size = 0
+    file_exists = False
+
+    for i in files:
+        fp = os.path.join(d, i)
+        file_size += os.path.getsize(fp)
+        file_exists = file_exists or os.path.exists(fp)
 
     file_size = os.path.getsize(path)
+    file_exists = os.path.exists(path)
 
-    return File(file_size)
+    return File(file_size, file_exists)
 
 
 def add_file_metrics(args, metrics):
     for f in args.file_path:
         file_info = get_file_info(f)
         metrics.add_metric('FileSize', 'Bytes', file_info.file_size, f=f)
+        metrics.add_metric('FileExists', None, file_info.file_exists, f=f)
 
 
 def add_static_file_metrics(args, metrics):
