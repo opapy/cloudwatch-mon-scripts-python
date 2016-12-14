@@ -495,7 +495,7 @@ def get_file_info(path):
         file_size += os.path.getsize(fp)
         file_exists = file_exists or os.path.exists(fp)
 
-    return File(file_size, file_exists)
+    return File(file_size, int(file_exists))
 
 
 def add_file_metrics(args, metrics):
